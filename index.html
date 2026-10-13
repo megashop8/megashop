@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mega Shop</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: VT323 (Retro Pixel) & Nunito (Cozy) -->
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=VT323&display=swap" rel="stylesheet" />
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              harvest: {
+                wood: "#8B4513",
+                darkwood: "#5C2C16",
+                cream: "#FFFDD0",
+                paper: "#FDF6E2",
+                border: "#78350F",
+                green: "#2D6A4F",
+                lightgreen: "#52B788",
+                gold: "#D4A373",
+                accent: "#E76F51",
+              },
+            },
+            fontFamily: {
+              pixel: ['"VT323"', "monospace"],
+              cozy: ['"Nunito"', "sans-serif"],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body {
+        font-family: "Nunito", sans-serif;
+        background-color: #e9edc9;
+        background-image: radial-gradient(#ccd5ae 1.5px, transparent 1.5px);
+        background-size: 24px 24px;
+      }
+      .pixel-font {
+        font-family: "VT323", monospace;
+      }
+      .hm-box {
+        background-color: #fdf6e2;
+        border: 4px solid #5c2c16;
+        box-shadow: 4px 4px 0px #5c2c16;
+        border-radius: 6px;
+      }
+      .hm-button {
+        background-color: #52b788;
+        border: 3px solid #2d6a4f;
+        box-shadow: 3px 3px 0px #1b4332;
+        transition: all 0.1s ease;
+      }
+      .hm-button:hover {
+        transform: translate(-1px, -1px);
+        box-shadow: 4px 4px 0px #1b4332;
+      }
+      .hm-button:active {
+        transform: translate(2px, 2px);
+        box-shadow: 1px 1px 0px #1b4332;
+      }
+      .hm-button-warning {
+        background-color: #f4a261;
+        border: 3px solid #e76f51;
+        box-shadow: 3px 3px 0px #9a031e;
+      }
+    </style>
+  </head>
+  <body class="text-stone-800 pb-16">
+    <!-- AUDIO EFFECT GENERATOR -->
+    <script>
+      function playSfx(type) {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === "click") {
+          osc.type = "square";
+          osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.08);
+          gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.08);
+        } else if (type === "coin") {
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+          osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.08);
+          osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.16);
+          gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.3);
+        }
+      }
+    </script>
+
+    <!-- HARVEST MOON HUD HEADER -->
+    <header class="bg-harvest-darkwood text-harvest-cream border-b-4 border-harvest-wood sticky top-0 z-50 shadow-md">
+      <div class="max-w-6xl mx-auto px-4 py-2 flex flex-wrap justify-between items-center">
+        <!-- Game HUD Info -->
+        <div class="flex items-center space-x-2 sm:space-x-4">
+          <div class="flex items-center space-x-1 bg-harvest-wood px-3 py-1 rounded border-2 border-harvest-cream/40">
+            <i class="fa-solid fa-calendar-day text-amber-300"></i>
+            <span id="live-date" class="pixel-font text-lg sm:text-xl tracking-wider uppercase">TANGGAL...</span>
+          </div>
+          <div class="flex items-center space-x-1 bg-harvest-wood px-3 py-1 rounded border-2 border-harvest-cream/40">
+            <i class="fa-solid fa-clock text-amber-300"></i>
+            <span id="live-time" class="pixel-font text-lg sm:text-xl tracking-wider">00:00:00</span>
+          </div>
+        </div>
+
+        <!-- Brand Title -->
+        <div class="text-center my-1 sm:my-0">
+          <h1 class="pixel-font text-3xl sm:text-4xl text-amber-300 tracking-wide drop-shadow-[2px_2px_0px_#2D6A4F]">🌾 MEGASHOP 🐔</h1>
+        </div>
+
+        <!-- Cart Button -->
+        <div>
+          <button onclick="toggleCart()" class="hm-button text-white px-3.5 py-1.5 rounded font-bold flex items-center space-x-2 text-sm">
+            <i class="fa-solid fa-basket-shopping text-amber-200"></i>
+            <span class="pixel-font text-xl">BAG: <span id="cart-count">0</span></span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="max-w-6xl mx-auto px-4 mt-6">
+      <!-- WELCOME BANNER -->
+      <div class="hm-box p-5 mb-8 relative overflow-hidden bg-amber-50">
+        <div class="absolute -right-4 -bottom-4 opacity-10 text-9xl">
+          <i class="fa-solid fa-store"></i>
+        </div>
+        <div class="flex flex-col md:flex-row items-center justify-between gap-4 relative z-10">
+          <div>
+            <span class="bg-amber-200 border border-harvest-wood text-harvest-darkwood text-xs px-2 py-0.5 rounded font-bold pixel-font text-lg">PERDAGANGAN - SUMATERA UTARA</span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-harvest-darkwood mt-1 font-cozy">Hasil Panen Segar & Pembersih Homemade! 🌱🧼</h2>
+            <p class="text-stone-700 text-sm sm:text-base mt-1">Menyediakan hasil tani segar, telur bebek & ayam kampung, serta **sabun cuci piring & pembersih toilet racikan sendiri**.</p>
+            <p class="text-xs text-stone-500 font-bold mt-1">🕒 Jam Operasional: Senin - Sabtu (07:00 - 17:00) | Minggu Libur</p>
+          </div>
+
+          <!-- Status Toko Otomatis -->
+          <div class="flex items-center gap-3 bg-white/80 p-3 rounded-lg border-2 border-harvest-wood min-w-[200px]">
+            <div id="store-status-icon" class="text-3xl">
+              <!-- Icon diisi via JS -->
+            </div>
+            <div>
+              <p class="text-xs text-stone-500 font-bold">STATUS TOKO:</p>
+              <p id="store-status-text" class="text-sm font-extrabold flex items-center gap-1">
+                <!-- Text status diisi via JS -->
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEARCH & FILTER KATEGORI -->
+      <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+        <!-- Filter Tabs -->
+        <div class="flex flex-wrap gap-2 w-full md:w-auto">
+          <button onclick="filterCategory('all', this)" class="category-btn hm-button bg-amber-700 text-white px-4 py-1.5 rounded font-bold text-sm pixel-font text-lg active">Semua Produk</button>
+          <button onclick="filterCategory('telur', this)" class="category-btn hm-button bg-amber-100 text-harvest-darkwood px-4 py-1.5 rounded font-bold text-sm pixel-font text-lg">Telur Segar</button>
+          <button onclick="filterCategory('panen', this)" class="category-btn hm-button bg-amber-100 text-harvest-darkwood px-4 py-1.5 rounded font-bold text-sm pixel-font text-lg">Hasil Tani</button>
+          <button onclick="filterCategory('pembersih', this)" class="category-btn hm-button bg-amber-100 text-harvest-darkwood px-4 py-1.5 rounded font-bold text-sm pixel-font text-lg">🧼 Pembersih Homemade</button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="w-full md:w-72 relative">
+          <input
+            type="text"
+            id="search-input"
+            onkeyup="searchProducts()"
+            placeholder="Cari telur, sabun cuci, cabai..."
+            class="w-full pl-9 pr-4 py-2 bg-white border-3 border-harvest-darkwood rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-600 font-cozy shadow-[2px_2px_0px_#5C2C16]"
+          />
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-stone-400"></i>
+        </div>
+      </div>
+
+      <!-- PRODUCT GRID -->
+      <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Produk dimuat via JavaScript -->
+      </div>
+    </main>
+
+    <!-- SHOPPING CART SLIDE-OVER -->
+    <div id="cart-drawer" class="fixed inset-0 z-50 overflow-hidden hidden">
+      <div class="absolute inset-0 bg-stone-900/50 backdrop-blur-sm transition-opacity" onclick="toggleCart()"></div>
+      <div class="absolute inset-y-0 right-0 max-w-full flex pl-10">
+        <div class="w-screen max-w-md bg-harvest-paper border-l-4 border-harvest-darkwood shadow-2xl flex flex-col">
+          <!-- Cart Header -->
+          <div class="p-4 bg-harvest-darkwood text-harvest-cream flex justify-between items-center border-b-4 border-harvest-wood">
+            <h3 class="pixel-font text-2xl tracking-wide flex items-center gap-2"><i class="fa-solid fa-basket-shopping text-amber-300"></i> KERANJANG BELANJA</h3>
+            <button onclick="toggleCart()" class="text-harvest-cream hover:text-amber-300 text-xl font-bold px-2">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <!-- Cart Items List -->
+          <div id="cart-items" class="flex-1 overflow-y-auto p-4 space-y-3 divide-y divide-amber-200">
+            <!-- Item keranjang dimasukkan via JS -->
+          </div>
+
+          <!-- Cart Footer / Checkout -->
+          <div class="p-4 bg-amber-100 border-t-4 border-harvest-wood">
+            <div class="flex justify-between items-center mb-3">
+              <span class="font-bold text-stone-700">Total Harga:</span>
+              <span id="cart-total" class="pixel-font text-3xl text-harvest-darkwood">Rp 0</span>
+            </div>
+            <button
+              onclick="checkoutWhatsApp()"
+              class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded border-3 border-emerald-900 shadow-[3px_3px_0px_#064e3b] flex items-center justify-center gap-2 text-lg transition active:translate-y-1"
+            >
+              <i class="fa-brands fa-whatsapp text-2xl text-amber-300"></i> CHECKOUT VIA WHATSAPP
+            </button>
+            <p class="text-xs text-center text-stone-500 mt-2 font-cozy">Pesanan akan langsung dikirim ke WhatsApp penjual.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="max-w-6xl mx-auto px-4 mt-16 text-center text-stone-600 text-sm border-t-2 border-harvest-wood/30 pt-4 font-cozy">
+      <p>🌾 Megashop © 2026 • Ditanam, Dirawat & Diracik dengan Sepenuh Hati</p>
+    </footer>
+
+    <!-- JAVASCRIPT DATA & LOGIC -->
+    <script>
+      // ISI NOMOR WHATSAPP KAMU DI SINI (Contoh: 6282276212843)
+      const sellerWhatsApp = "6282276212843";
+
+      // JAM OPERASIONAL STORE (07:00 - 17:00)
+      const OPEN_HOUR = 7;
+      const CLOSE_HOUR = 17;
+      let isStoreOpen = true;
+
+      // FUNGSI UPDATE JAM, TANGGAL & STATUS TOKO AUTOMATIS (DENGAN LOGIKA HARI MINGGU LIBUR)
+      function updateLiveHUD() {
+        const now = new Date();
+
+        // 1. Format Tanggal
+        const optionsDate = { weekday: "short", day: "numeric", month: "short" };
+        const dateString = now.toLocaleDateString("id-ID", optionsDate);
+        document.getElementById("live-date").innerText = dateString;
+
+        // 2. Format Jam Digital
+        const hours = String(now.getHours()).padStart(2, "0");
+        const minutes = String(now.getMinutes()).padStart(2, "0");
+        const seconds = String(now.getSeconds()).padStart(2, "0");
+        document.getElementById("live-time").innerText = `${hours}:${minutes}:${seconds}`;
+
+        // 3. Logika Hari & Jam Operasional (0 = Minggu, 1 = Senin, dst.)
+        const currentDay = now.getDay();
+        const currentHour = now.getHours();
+
+        const statusIcon = document.getElementById("store-status-icon");
+        const statusText = document.getElementById("store-status-text");
+
+        if (currentDay === 0) {
+          // Hari Minggu - Libur Total
+          isStoreOpen = false;
+          statusIcon.className = "text-3xl text-red-600";
+          statusIcon.innerHTML = `<i class="fa-solid fa-mug-hot"></i>`;
+          statusText.className = "text-sm font-extrabold text-red-700 flex items-center gap-1";
+          statusText.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> MINGGU - LIBUR TOKO`;
+        } else if (currentHour >= OPEN_HOUR && currentHour < CLOSE_HOUR) {
+          // Toko Buka
+          isStoreOpen = true;
+          statusIcon.className = "text-3xl text-green-700";
+          statusIcon.innerHTML = `<i class="fa-solid fa-circle-check"></i>`;
+          statusText.className = "text-sm font-extrabold text-green-700 flex items-center gap-1";
+          statusText.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span> BUKA & SIAP KIRIM`;
+        } else {
+          // Toko Tutup (Malam/Pagi sebelum jam 7)
+          isStoreOpen = false;
+          statusIcon.className = "text-3xl text-amber-700";
+          statusIcon.innerHTML = `<i class="fa-solid fa-moon"></i>`;
+          statusText.className = "text-sm font-extrabold text-amber-800 flex items-center gap-1";
+          statusText.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> TOKO TUTUP (BUKA 07:00)`;
+        }
+      }
+
+      // Jalankan timer jam setiap 1 detik
+      setInterval(updateLiveHUD, 1000);
+      updateLiveHUD();
+
+      // DATA PRODUK
+      const products = [
+        {
+          id: 1,
+          name: "Telur Bebek Segar (10 Butir)",
+          category: "telur",
+          price: 25000,
+          unit: "ikat/10 butir",
+          stock: true,
+          image: "https://images.unsplash.com/photo-1516467508483-a7212febe31a?auto=format&fit=crop&w=500&q=80",
+          badge: "🌟 Kualitas Super",
+          desc: "Telur bebek pilihan dari peternakan sendiri, kuning telur lebih pekat dan gurih.",
+        },
+        {
+          id: 2,
+          name: "Telur Ayam Kampung Asli (10 Butir)",
+          category: "telur",
+          price: 28000,
+          unit: "10 butir",
+          stock: false, // STOK HABIS (Contoh)
+          image: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=500&q=80",
+          badge: "⌛ Habis Hari Ini",
+          desc: "Telur ayam kampung murni tinggi protein. Stok hari ini habis, bisa PO untuk besok!",
+        },
+        {
+          id: 3,
+          name: "Sabun Cuci Piring Homemade (1 Liter)",
+          category: "pembersih",
+          price: 10000,
+          unit: "botol 1 Liter",
+          stock: true,
+          image: "https://images.unsplash.com/photo-1585832770485-e68a5fcfad52?auto=format&fit=crop&w=500&q=80",
+          badge: "🍋 Extra Jeruk Nipis",
+          desc: "Sabun pencuci piring racikan sendiri, busa melimpah, ampuh angkat lemak & lembut di tangan.",
+        },
+        {
+          id: 4,
+          name: "Pembersih Toilet & Keramik (1 Liter)",
+          category: "pembersih",
+          price: 12000,
+          unit: "botol 1 Liter",
+          stock: true,
+          image: "https://images.unsplash.com/photo-1584634731339-252c581abfc5?auto=format&fit=crop&w=500&q=80",
+          badge: "✨ Formula Kerak",
+          desc: "Pembersih toilet & porselen racikan rumahan, sangat cepat meluruhkan kerak membandel tanpa bau menyengat.",
+        },
+        {
+          id: 5,
+          name: "Bawang Merah Segar (1 Kg)",
+          category: "panen",
+          price: 32000,
+          unit: "kg",
+          stock: true,
+          image: "https://images.unsplash.com/photo-1618512492648-f990924c7943?auto=format&fit=crop&w=500&q=80",
+          badge: "🌿 Segar Panen",
+          desc: "Bawang merah segar ukuran besar dan sedang, wangi dan kualitas terpilih.",
+        },
+        {
+          id: 6,
+          name: "Cabai Merah Keriting (500 Gram)",
+          category: "panen",
+          price: 22000,
+          unit: "500 gram",
+          stock: true,
+          image: "https://images.unsplash.com/photo-1588836101131-17730e1c3132?auto=format&fit=crop&w=500&q=80",
+          badge: "🔥 Pedas Segar",
+          desc: "Cabai merah dipetik segar saat tingkat kematangan optimal.",
+        },
+      ];
+
+      let cart = [];
+
+      // Render Produk ke Halaman
+      function renderProducts(items) {
+        const grid = document.getElementById("product-grid");
+        grid.innerHTML = "";
+
+        if (items.length === 0) {
+          grid.innerHTML = `<div class="col-span-full text-center py-12 hm-box"><p class="text-xl font-bold text-stone-600">Produk tidak ditemukan! 🌱</p></div>`;
+          return;
+        }
+
+        items.forEach((product) => {
+          let buttonHtml = "";
+          if (product.stock) {
+            buttonHtml = `
+                        <button onclick="addToCart(${product.id})" class="hm-button bg-amber-500 hover:bg-amber-400 text-harvest-darkwood font-extrabold px-3 py-2 rounded flex items-center gap-1 text-sm">
+                            <i class="fa-solid fa-plus"></i> Beli
+                        </button>
+                    `;
+          } else {
+            buttonHtml = `
+                        <button onclick="askStockWhatsApp('${product.name}')" class="hm-button hm-button-warning text-stone-900 font-extrabold px-3 py-2 rounded flex items-center gap-1 text-xs">
+                            <i class="fa-brands fa-whatsapp text-sm"></i> Tanya Stok / PO
+                        </button>
+                    `;
+          }
+
+          grid.innerHTML += `
+                    <div class="hm-box bg-white overflow-hidden flex flex-col justify-between transition hover:-translate-y-1 ${!product.stock ? "opacity-90" : ""}">
+                        <div>
+                            <div class="relative h-48 overflow-hidden border-b-4 border-harvest-darkwood bg-amber-100">
+                                <img src="${product.image}" alt="${product.name}" class="w-full h-full object-cover ${!product.stock ? "grayscale-[30%]" : ""}">
+                                <span class="absolute top-2 left-2 ${product.stock ? "bg-amber-300 text-harvest-darkwood" : "bg-red-500 text-white"} font-bold text-xs px-2 py-1 rounded border-2 border-harvest-darkwood pixel-font text-lg">
+                                    ${product.stock ? product.badge : "❌ STOK HABIS"}
+                                </span>
+                            </div>
+                            <div class="p-4">
+                                <h3 class="font-extrabold text-lg text-harvest-darkwood mb-1">${product.name}</h3>
+                                <p class="text-xs text-stone-600 mb-3">${product.desc}</p>
+                            </div>
+                        </div>
+                        <div class="p-4 pt-0 flex items-center justify-between mt-auto">
+                            <div>
+                                <span class="text-xs text-stone-500 block">Harga / ${product.unit}</span>
+                                <span class="pixel-font text-2xl text-emerald-700 font-bold">Rp ${product.price.toLocaleString("id-ID")}</span>
+                            </div>
+                            ${buttonHtml}
+                        </div>
+                    </div>
+                `;
+        });
+      }
+
+      // Tanya Stok / PO via WhatsApp
+      function askStockWhatsApp(productName) {
+        playSfx("coin");
+        const message = `Halo Megashop 👋, saya lihat stok *${productName}* sedang kosong di website.\n\nKira-kira kapan restock / panen lagi ya kak? Saya mau pesan / PO dulu. Terima kasih! 🙏`;
+        const encodedMessage = encodeURIComponent(message);
+        const waUrl = `https://wa.me/${sellerWhatsApp}?text=${encodedMessage}`;
+        window.open(waUrl, "_blank");
+      }
+
+      // Filter Kategori
+      function filterCategory(category, btnElement) {
+        playSfx("click");
+        document.querySelectorAll(".category-btn").forEach((btn) => {
+          btn.classList.remove("bg-amber-700", "text-white");
+          btn.classList.add("bg-amber-100", "text-harvest-darkwood");
+        });
+        btnElement.classList.remove("bg-amber-100", "text-harvest-darkwood");
+        btnElement.classList.add("bg-amber-700", "text-white");
+
+        if (category === "all") {
+          renderProducts(products);
+        } else {
+          const filtered = products.filter((p) => p.category === category);
+          renderProducts(filtered);
+        }
+      }
+
+      // Pencarian Produk
+      function searchProducts() {
+        const keyword = document.getElementById("search-input").value.toLowerCase();
+        const filtered = products.filter((p) => p.name.toLowerCase().includes(keyword) || p.desc.toLowerCase().includes(keyword));
+        renderProducts(filtered);
+      }
+
+      // Tambah ke Keranjang
+      function addToCart(productId) {
+        playSfx("coin");
+        const product = products.find((p) => p.id === productId);
+        const existingItem = cart.find((item) => item.id === productId);
+
+        if (existingItem) {
+          existingItem.qty += 1;
+        } else {
+          cart.push({ ...product, qty: 1 });
+        }
+
+        updateCartBadge();
+        renderCartItems();
+
+        const cartBadgeEl = document.getElementById("cart-count");
+        cartBadgeEl.classList.add("scale-125");
+        setTimeout(() => cartBadgeEl.classList.remove("scale-125"), 200);
+      }
+
+      // Update Badge Keranjang
+      function updateCartBadge() {
+        const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
+        document.getElementById("cart-count").innerText = totalQty;
+      }
+
+      // Render Item di Keranjang
+      function renderCartItems() {
+        const container = document.getElementById("cart-items");
+        container.innerHTML = "";
+
+        if (cart.length === 0) {
+          container.innerHTML = `<p class="text-center text-stone-500 py-8 font-cozy">Keranjang masih kosong. Yuk pilih produk favoritmu! 🧺</p>`;
+          document.getElementById("cart-total").innerText = "Rp 0";
+          return;
+        }
+
+        let totalSum = 0;
+
+        cart.forEach((item, index) => {
+          const subtotal = item.price * item.qty;
+          totalSum += subtotal;
+
+          container.innerHTML += `
+                    <div class="flex justify-between items-center py-2">
+                        <div class="pr-2">
+                            <h4 class="font-bold text-sm text-harvest-darkwood">${item.name}</h4>
+                            <span class="text-xs text-stone-600">Rp ${item.price.toLocaleString("id-ID")} x ${item.qty}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="pixel-font text-xl text-emerald-800">Rp ${subtotal.toLocaleString("id-ID")}</span>
+                            <div class="flex items-center border-2 border-harvest-darkwood rounded bg-white overflow-hidden">
+                                <button onclick="updateQty(${index}, -1)" class="px-2 py-0.5 bg-amber-200 hover:bg-amber-300 font-bold">-</button>
+                                <span class="px-2 text-xs font-bold">${item.qty}</span>
+                                <button onclick="updateQty(${index}, 1)" class="px-2 py-0.5 bg-amber-200 hover:bg-amber-300 font-bold">+</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+        });
+
+        document.getElementById("cart-total").innerText = `Rp ${totalSum.toLocaleString("id-ID")}`;
+      }
+
+      // Ubah Kuantitas di Keranjang
+      function updateQty(index, change) {
+        playSfx("click");
+        cart[index].qty += change;
+        if (cart[index].qty <= 0) {
+          cart.splice(index, 1);
+        }
+        updateCartBadge();
+        renderCartItems();
+      }
+
+      // Toggle Buka/Tutup Keranjang
+      function toggleCart() {
+        playSfx("click");
+        const drawer = document.getElementById("cart-drawer");
+        drawer.classList.toggle("hidden");
+      }
+
+      // Checkout otomatis ke WhatsApp
+      function checkoutWhatsApp() {
+        playSfx("coin");
+        if (cart.length === 0) {
+          alert("Keranjang belanja masih kosong!");
+          return;
+        }
+
+        let message = "Halo Megashop 👋, saya ingin memesan produk berikut:\n\n";
+        let totalSum = 0;
+
+        cart.forEach((item, idx) => {
+          const sub = item.price * item.qty;
+          totalSum += sub;
+          message += `${idx + 1}. *${item.name}* (${item.qty} ${item.unit}) - Rp ${sub.toLocaleString("id-ID")}\n`;
+        });
+
+        message += `\n*TOTAL PESANAN: Rp ${totalSum.toLocaleString("id-ID")}*`;
+
+        // Catatan otomatis jika toko sedang tutup / libur
+        if (!isStoreOpen) {
+          message += `\n\n_(Catatan: Pesanan dikirim saat toko libur/tutup, mohon diproses saat jam operasional buka kembali ya kak. Terima kasih!)_`;
+        } else {
+          message += `\n\nMohon info ketersediaan stok dan total beserta ongkirnya ya. Terima kasih! 🙏`;
+        }
+
+        const encodedMessage = encodeURIComponent(message);
+        const waUrl = `https://wa.me/${sellerWhatsApp}?text=${encodedMessage}`;
+
+        window.open(waUrl, "_blank");
+      }
+
+      // Render produk saat dibuka
+      renderProducts(products);
+    </script>
+  </body>
+</html>
