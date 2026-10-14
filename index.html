@@ -314,32 +314,40 @@
           category: "telur",
           price: 28000,
           unit: "10 butir",
-          stock: false, // STOK HABIS (Contoh)
+          stock: false,
           image: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=500&q=80",
           badge: "⌛ Habis Hari Ini",
           desc: "Telur ayam kampung murni tinggi protein. Stok hari ini habis, bisa PO untuk besok!",
         },
         {
           id: 3,
-          name: "Sabun Cuci Piring Homemade (1 Liter)",
+          name: "Sabun Cuci Piring Homemade",
           category: "pembersih",
           price: 10000,
-          unit: "botol 1 Liter",
+          unit: "botol",
           stock: true,
           image: "pembersih-piring.jpeg",
           badge: "🍋 Extra Jeruk Nipis",
           desc: "Sabun pencuci piring racikan sendiri, busa melimpah, ampuh angkat lemak & lembut di tangan.",
+          variants: [
+            { size: "1 Liter", price: 10000, stock: true },
+            { size: "5 Liter (Jerigen)", price: 45000, stock: true }, // Ubah ke false jika 5L habis
+          ],
         },
         {
           id: 4,
-          name: "Pembersih Toilet & Keramik (1 Liter)",
+          name: "Pembersih Toilet & Keramik",
           category: "pembersih",
           price: 12000,
-          unit: "botol 1 Liter",
+          unit: "botol",
           stock: true,
           image: "pembersih-toilet.jpeg",
           badge: "✨ Formula Kerak",
-          desc: "Pembersih toilet & porselen racikan rumahan, sangat cepat meluruhkan kerak membandel tanpa bau menyengat.",
+          desc: "Pembersih toilet & porselen racikan rumahan, sangat cepat meluruhkan kerak membandel.",
+          variants: [
+            { size: "1 Liter", price: 12000, stock: true },
+            { size: "5 Liter (Jerigen)", price: 55000, stock: false }, // Contoh 5L sedang habis
+          ],
         },
         {
           id: 5,
@@ -367,7 +375,7 @@
 
       let cart = [];
 
-      // Render Produk ke Halaman
+      // Render Produk ke Halaman (Mendukung Varian Ukuran)
       function renderProducts(items) {
         const grid = document.getElementById("product-grid");
         grid.innerHTML = "";
@@ -378,72 +386,111 @@
         }
 
         items.forEach((product) => {
+          let priceSection = "";
           let buttonHtml = "";
-          if (product.stock) {
+
+          if (product.variants) {
+            // Jika produk punya varian (seperti 1L & 5L)
+            let variantOptions = product.variants
+              .map(
+                (v, idx) => `
+              <option value="${idx}" ${!v.stock ? "disabled" : ""}>
+                ${v.size} - Rp ${v.price.toLocaleString("id-ID")} ${!v.stock ? "(Habis)" : ""}
+              </option>
+            `,
+              )
+              .join("");
+
+            priceSection = `
+              <div class="mb-2">
+                <label class="block text-xs text-stone-500 font-bold mb-1">Pilih Ukuran:</label>
+                <select id="variant-select-${product.id}" class="w-full p-1.5 text-xs bg-amber-50 border-2 border-harvest-darkwood rounded font-bold">
+                  ${variantOptions}
+                </select>
+              </div>
+            `;
+
             buttonHtml = `
-                        <button onclick="addToCart(${product.id})" class="hm-button bg-amber-500 hover:bg-amber-400 text-harvest-darkwood font-extrabold px-3 py-2 rounded flex items-center gap-1 text-sm">
-                            <i class="fa-solid fa-plus"></i> Beli
-                        </button>
-                    `;
+              <button onclick="addVariantToCart(${product.id})" class="hm-button bg-amber-500 hover:bg-amber-400 text-harvest-darkwood font-extrabold px-3 py-2 rounded flex items-center gap-1 text-sm w-full justify-center">
+                  <i class="fa-solid fa-plus"></i> Tambah ke Keranjang
+              </button>
+            `;
           } else {
-            buttonHtml = `
-                        <button onclick="askStockWhatsApp('${product.name}')" class="hm-button hm-button-warning text-stone-900 font-extrabold px-3 py-2 rounded flex items-center gap-1 text-xs">
-                            <i class="fa-brands fa-whatsapp text-sm"></i> Tanya Stok / PO
-                        </button>
-                    `;
+            // Produk standar tanpa varian
+            priceSection = `
+              <div>
+                  <span class="text-xs text-stone-500 block">Harga / ${product.unit}</span>
+                  <span class="pixel-font text-2xl text-emerald-700 font-bold">Rp ${product.price.toLocaleString("id-ID")}</span>
+              </div>
+            `;
+
+            if (product.stock) {
+              buttonHtml = `
+                <button onclick="addToCart(${product.id})" class="hm-button bg-amber-500 hover:bg-amber-400 text-harvest-darkwood font-extrabold px-3 py-2 rounded flex items-center gap-1 text-sm">
+                    <i class="fa-solid fa-plus"></i> Beli
+                </button>
+              `;
+            } else {
+              buttonHtml = `
+                <button onclick="askStockWhatsApp('${product.name}')" class="hm-button hm-button-warning text-stone-900 font-extrabold px-3 py-2 rounded flex items-center gap-1 text-xs">
+                    <i class="fa-brands fa-whatsapp text-sm"></i> Tanya Stok / PO
+                </button>
+              `;
+            }
           }
 
           grid.innerHTML += `
-                    <div class="hm-box bg-white overflow-hidden flex flex-col justify-between transition hover:-translate-y-1 ${!product.stock ? "opacity-90" : ""}">
-                        <div>
-                            <div class="relative h-48 overflow-hidden border-b-4 border-harvest-darkwood bg-amber-100">
-                                <img src="${product.image}" alt="${product.name}" class="w-full h-full object-contain ${!product.stock ? "grayscale-[30%]" : ""}">
-                                <span class="absolute top-2 left-2 ${product.stock ? "bg-amber-300 text-harvest-darkwood" : "bg-red-500 text-white"} font-bold text-xs px-2 py-1 rounded border-2 border-harvest-darkwood pixel-font text-lg">
-                                    ${product.stock ? product.badge : "❌ STOK HABIS"}
-                                </span>
-                            </div>
-                            <div class="p-4">
-                                <h3 class="font-extrabold text-lg text-harvest-darkwood mb-1">${product.name}</h3>
-                                <p class="text-xs text-stone-600 mb-3">${product.desc}</p>
-                            </div>
-                        </div>
-                        <div class="p-4 pt-0 flex items-center justify-between mt-auto">
-                            <div>
-                                <span class="text-xs text-stone-500 block">Harga / ${product.unit}</span>
-                                <span class="pixel-font text-2xl text-emerald-700 font-bold">Rp ${product.price.toLocaleString("id-ID")}</span>
-                            </div>
-                            ${buttonHtml}
-                        </div>
+            <div class="hm-box bg-white overflow-hidden flex flex-col justify-between transition hover:-translate-y-1">
+                <div>
+                    <div class="relative h-48 overflow-hidden border-b-4 border-harvest-darkwood bg-amber-100">
+                        <img src="${product.image}" alt="${product.name}" class="w-full h-full object-contain">
+                        <span class="absolute top-2 left-2 bg-amber-300 text-harvest-darkwood font-bold text-xs px-2 py-1 rounded border-2 border-harvest-darkwood pixel-font text-lg">
+                            ${product.badge}
+                        </span>
                     </div>
-                `;
+                    <div class="p-4">
+                        <h3 class="font-extrabold text-lg text-harvest-darkwood mb-1">${product.name}</h3>
+                        <p class="text-xs text-stone-600 mb-3">${product.desc}</p>
+                        ${priceSection}
+                    </div>
+                </div>
+                <div class="p-4 pt-0 mt-auto">
+                    ${!product.variants ? `<div class="flex items-center justify-between">` : ``}
+                    ${!product.variants ? priceSection : ``}
+                    ${buttonHtml}
+                    ${!product.variants ? `</div>` : ``}
+                </div>
+            </div>
+          `;
         });
       }
 
-      // Tanya Stok / PO via WhatsApp
-      function askStockWhatsApp(productName) {
+      // Fungsi khusus memasukkan produk dengan varian ke keranjang
+      function addVariantToCart(productId) {
         playSfx("coin");
-        const message = `Halo Megashop 👋, saya lihat stok *${productName}* sedang kosong di website.\n\nKira-kira kapan restock / panen lagi ya kak? Saya mau pesan / PO dulu. Terima kasih! 🙏`;
-        const encodedMessage = encodeURIComponent(message);
-        const waUrl = `https://wa.me/${sellerWhatsApp}?text=${encodedMessage}`;
-        window.open(waUrl, "_blank");
-      }
+        const product = products.find((p) => p.id === productId);
+        const selectEl = document.getElementById(`variant-select-${productId}`);
+        const selectedVariantIndex = selectEl.value;
+        const variant = product.variants[selectedVariantIndex];
 
-      // Filter Kategori
-      function filterCategory(category, btnElement) {
-        playSfx("click");
-        document.querySelectorAll(".category-btn").forEach((btn) => {
-          btn.classList.remove("bg-amber-700", "text-white");
-          btn.classList.add("bg-amber-100", "text-harvest-darkwood");
-        });
-        btnElement.classList.remove("bg-amber-100", "text-harvest-darkwood");
-        btnElement.classList.add("bg-amber-700", "text-white");
+        // Buat ID unik untuk keranjang berdasarkan produk dan ukuran variannya
+        const cartItemId = `${productId}-${variant.size}`;
+        const existingItem = cart.find((item) => item.cartItemId === cartItemId);
 
-        if (category === "all") {
-          renderProducts(products);
+        if (existingItem) {
+          existingItem.qty += 1;
         } else {
-          const filtered = products.filter((p) => p.category === category);
-          renderProducts(filtered);
+          cart.push({
+            cartItemId: cartItemId,
+            name: `${product.name} (${variant.size})`,
+            price: variant.price,
+            unit: variant.size,
+            qty: 1,
+          });
         }
+
+        updateCartBadge();
+        renderCartItems();
       }
 
       // Pencarian Produk
