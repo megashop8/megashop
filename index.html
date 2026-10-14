@@ -375,7 +375,7 @@
 
       let cart = [];
 
-      // Render Produk ke Halaman (Mendukung Varian Ukuran)
+      // Render Produk ke Halaman (Mendukung Produk Biasa & Produk Varian)
       function renderProducts(items) {
         const grid = document.getElementById("product-grid");
         grid.innerHTML = "";
@@ -386,11 +386,11 @@
         }
 
         items.forEach((product) => {
-          let priceSection = "";
+          let contentSection = "";
           let buttonHtml = "";
 
           if (product.variants) {
-            // Jika produk punya varian (seperti 1L & 5L)
+            // KHUSUS PRODUK DENGAN VARIAN (Pembersih)
             let variantOptions = product.variants
               .map(
                 (v, idx) => `
@@ -401,8 +401,8 @@
               )
               .join("");
 
-            priceSection = `
-              <div class="mb-2">
+            contentSection = `
+              <div class="mb-3">
                 <label class="block text-xs text-stone-500 font-bold mb-1">Pilih Ukuran:</label>
                 <select id="variant-select-${product.id}" class="w-full p-1.5 text-xs bg-amber-50 border-2 border-harvest-darkwood rounded font-bold">
                   ${variantOptions}
@@ -411,13 +411,13 @@
             `;
 
             buttonHtml = `
-              <button onclick="addVariantToCart(${product.id})" class="hm-button bg-amber-500 hover:bg-amber-400 text-harvest-darkwood font-extrabold px-3 py-2 rounded flex items-center gap-1 text-sm w-full justify-center">
+              <button onclick="addVariantToCart(${product.id})" class="hm-button bg-amber-500 hover:bg-amber-400 text-harvest-darkwood font-extrabold px-3 py-2 rounded flex items-center justify-center gap-1 text-sm w-full">
                   <i class="fa-solid fa-plus"></i> Tambah ke Keranjang
               </button>
             `;
           } else {
-            // Produk standar tanpa varian
-            priceSection = `
+            // KHUSUS PRODUK BIASA TANPA VARIAN (Telur, Bawang, Cabai)
+            contentSection = `
               <div>
                   <span class="text-xs text-stone-500 block">Harga / ${product.unit}</span>
                   <span class="pixel-font text-2xl text-emerald-700 font-bold">Rp ${product.price.toLocaleString("id-ID")}</span>
@@ -443,22 +443,20 @@
             <div class="hm-box bg-white overflow-hidden flex flex-col justify-between transition hover:-translate-y-1">
                 <div>
                     <div class="relative h-48 overflow-hidden border-b-4 border-harvest-darkwood bg-amber-100">
-                        <img src="${product.image}" alt="${product.name}" class="w-full h-full object-contain">
-                        <span class="absolute top-2 left-2 bg-amber-300 text-harvest-darkwood font-bold text-xs px-2 py-1 rounded border-2 border-harvest-darkwood pixel-font text-lg">
-                            ${product.badge}
+                        <img src="${product.image}" alt="${product.name}" class="w-full h-full object-contain ${product.stock === false ? "grayscale-[30%]" : ""}">
+                        <span class="absolute top-2 left-2 ${product.stock !== false ? "bg-amber-300 text-harvest-darkwood" : "bg-red-500 text-white"} font-bold text-xs px-2 py-1 rounded border-2 border-harvest-darkwood pixel-font text-lg">
+                            ${product.stock !== false ? product.badge : "❌ STOK HABIS"}
                         </span>
                     </div>
                     <div class="p-4">
                         <h3 class="font-extrabold text-lg text-harvest-darkwood mb-1">${product.name}</h3>
                         <p class="text-xs text-stone-600 mb-3">${product.desc}</p>
-                        ${priceSection}
                     </div>
                 </div>
                 <div class="p-4 pt-0 mt-auto">
-                    ${!product.variants ? `<div class="flex items-center justify-between">` : ``}
-                    ${!product.variants ? priceSection : ``}
+                    ${product.variants ? contentSection : `<div class="flex items-center justify-between">` + contentSection}
                     ${buttonHtml}
-                    ${!product.variants ? `</div>` : ``}
+                    ${product.variants ? `` : `</div>`}
                 </div>
             </div>
           `;
