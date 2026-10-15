@@ -147,7 +147,14 @@
             <span class="bg-amber-200 border border-harvest-wood text-harvest-darkwood text-xs px-2 py-0.5 rounded font-bold pixel-font text-lg">PERDAGANGAN - SUMATERA UTARA</span>
             <h2 class="text-2xl sm:text-3xl font-extrabold text-harvest-darkwood mt-1 font-cozy">Hasil Panen Segar & Pembersih Homemade! 🌱🧼</h2>
             <p class="text-stone-700 text-sm sm:text-base mt-1">Menyediakan hasil tani segar, telur bebek & ayam kampung, serta **sabun cuci piring & pembersih toilet racikan sendiri**.</p>
-            <p class="text-xs text-stone-500 font-bold mt-1">🕒 Jam Operasional: Senin - Sabtu (07:00 - 17:00) | Minggu Libur</p>
+
+            <!-- CATATAN GROSIR / MINIMAL PEMBELIAN -->
+            <div class="mt-2 inline-flex items-center gap-2 bg-amber-200/80 border-2 border-harvest-wood px-3 py-1 rounded text-xs font-bold text-harvest-darkwood shadow-sm">
+              <i class="fa-solid fa-tags text-amber-800"></i>
+              <span>Untuk harga grosir / partai (dengan minimal pembelian), silakan chat WhatsApp langsung untuk penawaran spesial! 💬</span>
+            </div>
+
+            <p class="text-xs text-stone-500 font-bold mt-2">🕒 Jam Operasional: Senin - Sabtu (07:00 - 17:00) | Minggu Libur</p>
           </div>
 
           <!-- Status Toko Otomatis -->
@@ -294,7 +301,7 @@
       setInterval(updateLiveHUD, 1000);
       updateLiveHUD();
 
-      // DATA PRODUK (MENDUKUNG BIASA & VARIAN)
+      // DATA PRODUK (MENDUKUNG BIASA, VARIAN & COMING SOON)
       const products = [
         {
           id: 1,
@@ -302,10 +309,10 @@
           category: "telur",
           price: 25000,
           unit: "ikat/10 butir",
-          stock: true,
+          stock: "coming_soon", // Status khusus Bebek Umur 2 Bulan
           image: "https://images.unsplash.com/photo-1516467508483-a7212febe31a?auto=format&fit=crop&w=500&q=80",
-          badge: "🌟 Kualitas Super",
-          desc: "Telur bebek pilihan dari peternakan sendiri, kuning telur lebih pekat dan gurih.",
+          badge: "🐣 COMING SOON",
+          desc: "Bebek ternak sendiri, saat ini masih umur 2 bulan. Estimasi siap panen & bertelur sebentar lagi! Bisa booking/PO dari sekarang.",
         },
         {
           id: 2,
@@ -419,15 +426,22 @@
               </div>
             `;
 
-            if (product.stock) {
+            if (product.stock === true) {
               buttonHtml = `
                 <button onclick="addToCart(${product.id})" class="hm-button bg-amber-500 hover:bg-amber-400 text-harvest-darkwood font-extrabold px-3 py-2 rounded flex items-center gap-1 text-sm">
                     <i class="fa-solid fa-plus"></i> Beli
                 </button>
               `;
+            } else if (product.stock === "coming_soon") {
+              // DUKUNGAN TOMBOL COMING SOON / BOOKING
+              buttonHtml = `
+                <button onclick="askStockWhatsApp('${product.name}', 'coming_soon')" class="hm-button bg-amber-400 hover:bg-amber-300 text-harvest-darkwood font-extrabold px-3 py-2 rounded flex items-center gap-1 text-xs">
+                    <i class="fa-brands fa-whatsapp text-sm text-emerald-900"></i> Booking PO
+                </button>
+              `;
             } else {
               buttonHtml = `
-                <button onclick="askStockWhatsApp('${product.name}')" class="hm-button hm-button-warning text-stone-900 font-extrabold px-3 py-2 rounded flex items-center gap-1 text-xs">
+                <button onclick="askStockWhatsApp('${product.name}', 'habis')" class="hm-button hm-button-warning text-stone-900 font-extrabold px-3 py-2 rounded flex items-center gap-1 text-xs">
                     <i class="fa-brands fa-whatsapp text-sm"></i> Tanya Stok / PO
                 </button>
               `;
@@ -439,8 +453,8 @@
                 <div>
                     <div class="relative h-48 overflow-hidden border-b-4 border-harvest-darkwood bg-amber-100">
                         <img src="${product.image}" alt="${product.name}" class="w-full h-full object-contain ${product.stock === false ? "grayscale-[30%]" : ""}">
-                        <span class="absolute top-2 left-2 ${product.stock !== false ? "bg-amber-300 text-harvest-darkwood" : "bg-red-500 text-white"} font-bold text-xs px-2 py-1 rounded border-2 border-harvest-darkwood pixel-font text-lg">
-                            ${product.stock !== false ? product.badge : "❌ STOK HABIS"}
+                        <span class="absolute top-2 left-2 ${product.stock === true ? "bg-amber-300 text-harvest-darkwood" : product.stock === "coming_soon" ? "bg-amber-400 text-harvest-darkwood" : "bg-red-500 text-white"} font-bold text-xs px-2 py-1 rounded border-2 border-harvest-darkwood pixel-font text-lg">
+                            ${product.stock === true ? product.badge : product.stock === "coming_soon" ? product.badge : "❌ STOK HABIS"}
                         </span>
                     </div>
                     <div class="p-4">
@@ -485,10 +499,15 @@
         renderCartItems();
       }
 
-      // TANYA STOK / PO VIA WHATSAPP
-      function askStockWhatsApp(productName) {
+      // TANYA STOK / BOOKING PO VIA WHATSAPP
+      function askStockWhatsApp(productName, type = "habis") {
         playSfx("coin");
-        const message = `Halo Megashop 👋, saya lihat stok *${productName}* sedang kosong di website.\n\nKira-kira kapan restock / panen lagi ya kak? Saya mau pesan / PO dulu. Terima kasih! 🙏`;
+        let message = "";
+        if (type === "coming_soon") {
+          message = `Halo Megashop 👋, saya mau booking/PO untuk *${productName}* yang sedang masa pembesaran (umur 2 bulan).\n\nKira-kira estimasi panen perdananya kapan ya kak? Saya mau booking urutan pertama. Terima kasih! 🐣`;
+        } else {
+          message = `Halo Megashop 👋, saya lihat stok *${productName}* sedang kosong di website.\n\nKira-kira kapan restock / panen lagi ya kak? Saya mau pesan / PO dulu. Terima kasih! 🙏`;
+        }
         const encodedMessage = encodeURIComponent(message);
         const waUrl = `https://wa.me/${sellerWhatsApp}?text=${encodedMessage}`;
         window.open(waUrl, "_blank");
