@@ -237,7 +237,7 @@
 
     <!-- JAVASCRIPT DATA & LOGIC -->
     <script>
-      // ISI NOMOR WHATSAPP KAMU DI SINI (Contoh: 6282276212843)
+      // ISI NOMOR WHATSAPP KAMU DI SINI
       const sellerWhatsApp = "6282276212843";
 
       // JAM OPERASIONAL STORE (07:00 - 17:00)
@@ -291,11 +291,10 @@
         }
       }
 
-      // Jalankan timer jam setiap 1 detik
       setInterval(updateLiveHUD, 1000);
       updateLiveHUD();
 
-      // DATA PRODUK
+      // DATA PRODUK (MENDUKUNG BIASA & VARIAN)
       const products = [
         {
           id: 1,
@@ -323,23 +322,19 @@
           id: 3,
           name: "Sabun Cuci Piring Homemade",
           category: "pembersih",
-          price: 10000,
-          unit: "botol",
           stock: true,
           image: "pembersih-piring.jpeg",
           badge: "🍋 Extra Jeruk Nipis",
           desc: "Sabun pencuci piring racikan sendiri, busa melimpah, ampuh angkat lemak & lembut di tangan.",
           variants: [
             { size: "1 Liter", price: 10000, stock: true },
-            { size: "5 Liter (Jerigen)", price: 45000, stock: true }, // Ubah ke false jika 5L habis
+            { size: "5 Liter (Jerigen)", price: 45000, stock: true },
           ],
         },
         {
           id: 4,
           name: "Pembersih Toilet & Keramik",
           category: "pembersih",
-          price: 12000,
-          unit: "botol",
           stock: true,
           image: "pembersih-toilet.jpeg",
           badge: "✨ Formula Kerak",
@@ -375,7 +370,7 @@
 
       let cart = [];
 
-      // Render Produk ke Halaman (Mendukung Produk Biasa & Produk Varian)
+      // RENDER PRODUK KE HALAMAN
       function renderProducts(items) {
         const grid = document.getElementById("product-grid");
         grid.innerHTML = "";
@@ -390,7 +385,7 @@
           let buttonHtml = "";
 
           if (product.variants) {
-            // KHUSUS PRODUK DENGAN VARIAN (Pembersih)
+            // PRODUK DENGAN VARIAN (Pembersih)
             let variantOptions = product.variants
               .map(
                 (v, idx) => `
@@ -416,7 +411,7 @@
               </button>
             `;
           } else {
-            // KHUSUS PRODUK BIASA TANPA VARIAN (Telur, Bawang, Cabai)
+            // PRODUK BIASA TANPA VARIAN (Telur, Bawang, Cabai)
             contentSection = `
               <div>
                   <span class="text-xs text-stone-500 block">Harga / ${product.unit}</span>
@@ -463,7 +458,7 @@
         });
       }
 
-      // Fungsi khusus memasukkan produk dengan varian ke keranjang
+      // TAMBAH VARIAN KE KERANJANG
       function addVariantToCart(productId) {
         playSfx("coin");
         const product = products.find((p) => p.id === productId);
@@ -471,7 +466,6 @@
         const selectedVariantIndex = selectEl.value;
         const variant = product.variants[selectedVariantIndex];
 
-        // Buat ID unik untuk keranjang berdasarkan produk dan ukuran variannya
         const cartItemId = `${productId}-${variant.size}`;
         const existingItem = cart.find((item) => item.cartItemId === cartItemId);
 
@@ -491,18 +485,48 @@
         renderCartItems();
       }
 
-      // Pencarian Produk
+      // TANYA STOK / PO VIA WHATSAPP
+      function askStockWhatsApp(productName) {
+        playSfx("coin");
+        const message = `Halo Megashop 👋, saya lihat stok *${productName}* sedang kosong di website.\n\nKira-kira kapan restock / panen lagi ya kak? Saya mau pesan / PO dulu. Terima kasih! 🙏`;
+        const encodedMessage = encodeURIComponent(message);
+        const waUrl = `https://wa.me/${sellerWhatsApp}?text=${encodedMessage}`;
+        window.open(waUrl, "_blank");
+      }
+
+      // FILTER KATEGORI
+      function filterCategory(category, btnElement) {
+        playSfx("click");
+
+        document.querySelectorAll(".category-btn").forEach((btn) => {
+          btn.classList.remove("bg-amber-700", "text-white");
+          btn.classList.add("bg-amber-100", "text-harvest-darkwood");
+        });
+        if (btnElement) {
+          btnElement.classList.remove("bg-amber-100", "text-harvest-darkwood");
+          btnElement.classList.add("bg-amber-700", "text-white");
+        }
+
+        if (category === "all") {
+          renderProducts(products);
+        } else {
+          const filtered = products.filter((p) => p.category === category);
+          renderProducts(filtered);
+        }
+      }
+
+      // PENCARIAN PRODUK
       function searchProducts() {
         const keyword = document.getElementById("search-input").value.toLowerCase();
         const filtered = products.filter((p) => p.name.toLowerCase().includes(keyword) || p.desc.toLowerCase().includes(keyword));
         renderProducts(filtered);
       }
 
-      // Tambah ke Keranjang
+      // TAMBAH PRODUK BIASA KE KERANJANG
       function addToCart(productId) {
         playSfx("coin");
         const product = products.find((p) => p.id === productId);
-        const existingItem = cart.find((item) => item.id === productId);
+        const existingItem = cart.find((item) => item.id === productId && !item.cartItemId);
 
         if (existingItem) {
           existingItem.qty += 1;
@@ -518,13 +542,13 @@
         setTimeout(() => cartBadgeEl.classList.remove("scale-125"), 200);
       }
 
-      // Update Badge Keranjang
+      // UPDATE BADGE KERANJANG
       function updateCartBadge() {
         const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
         document.getElementById("cart-count").innerText = totalQty;
       }
 
-      // Render Item di Keranjang
+      // RENDER ITEM DI KERANJANG
       function renderCartItems() {
         const container = document.getElementById("cart-items");
         container.innerHTML = "";
@@ -562,7 +586,7 @@
         document.getElementById("cart-total").innerText = `Rp ${totalSum.toLocaleString("id-ID")}`;
       }
 
-      // Ubah Kuantitas di Keranjang
+      // UBAH KUANTITAS
       function updateQty(index, change) {
         playSfx("click");
         cart[index].qty += change;
@@ -573,14 +597,14 @@
         renderCartItems();
       }
 
-      // Toggle Buka/Tutup Keranjang
+      // TOGGLE BUKA/TUTUP KERANJANG
       function toggleCart() {
         playSfx("click");
         const drawer = document.getElementById("cart-drawer");
         drawer.classList.toggle("hidden");
       }
 
-      // Checkout otomatis ke WhatsApp
+      // CHECKOUT VIA WHATSAPP
       function checkoutWhatsApp() {
         playSfx("coin");
         if (cart.length === 0) {
@@ -594,12 +618,11 @@
         cart.forEach((item, idx) => {
           const sub = item.price * item.qty;
           totalSum += sub;
-          message += `${idx + 1}. *${item.name}* (${item.qty} ${item.unit}) - Rp ${sub.toLocaleString("id-ID")}\n`;
+          message += `${idx + 1}. *${item.name}* (${item.qty} ${item.unit || ""}) - Rp ${sub.toLocaleString("id-ID")}\n`;
         });
 
         message += `\n*TOTAL PESANAN: Rp ${totalSum.toLocaleString("id-ID")}*`;
 
-        // Catatan otomatis jika toko sedang tutup / libur
         if (!isStoreOpen) {
           message += `\n\n_(Catatan: Pesanan dikirim saat toko libur/tutup, mohon diproses saat jam operasional buka kembali ya kak. Terima kasih!)_`;
         } else {
@@ -612,7 +635,7 @@
         window.open(waUrl, "_blank");
       }
 
-      // Render produk saat dibuka
+      // INITIAL RENDER
       renderProducts(products);
     </script>
   </body>
